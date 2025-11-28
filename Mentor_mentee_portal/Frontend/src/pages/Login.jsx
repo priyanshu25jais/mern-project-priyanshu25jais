@@ -1,90 +1,71 @@
-import React, { useState } from 'react'
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import api from "../api";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  TextField,
+  Typography,
+} from "@mui/material";
 
-const Login = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  })
+export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const nav = useNavigate();
 
-  const [errors, setErrors] = useState({})
-  const [status, setStatus] = useState(null)
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const { data } = await api.post("/auth/login", { email, password });
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data));
 
-  const validate = () => {
-    const nextErrors = {}
-
-    if (!formData.email.trim()) {
-      nextErrors.email = 'Email is required.'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      nextErrors.email = 'Enter a valid email address.'
+      if (data.role === "mentor") nav("/mentor/dashboard");
+      else nav("/mentee/dashboard");
+    } catch (err) {
+      alert(err.response?.data?.message || "Login failed");
     }
-
-    if (!formData.password) {
-      nextErrors.password = 'Password is required.'
-    } else if (formData.password.length < 6) {
-      nextErrors.password = 'Password must be at least 6 characters.'
-    }
-
-    return nextErrors
-  }
-
-  const handleChange = (event) => {
-    const { name, value } = event.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleSubmit = (event) => {
-    event.preventDefault()
-    const validationErrors = validate()
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors)
-      setStatus(null)
-      return
-    }
-
-    setErrors({})
-    setStatus('Login successful! (Mock submission)')
-    // TODO: Replace with API call
-  }
+  };
 
   return (
-    <section className="page">
-      <h1>Login</h1>
-      <p>Access your personalized dashboard by logging into your mentor or mentee account.</p>
-
-      <form className="form" onSubmit={handleSubmit} noValidate>
-        <div className="form__field">
-          <label htmlFor="login-email">Email</label>
-          <input
-            id="login-email"
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            placeholder="you@example.com"
-          />
-          {errors.email && <span className="form__error">{errors.email}</span>}
-        </div>
-
-        <div className="form__field">
-          <label htmlFor="login-password">Password</label>
-          <input
-            id="login-password"
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="Enter your password"
-          />
-          {errors.password && <span className="form__error">{errors.password}</span>}
-        </div>
-
-        <button type="submit" className="form__submit">
-          Log In
-        </button>
-        {status && <p className="form__status">{status}</p>}
-      </form>
-    </section>
-  )
+    <Box display="flex" justifyContent="center" mt={6}>
+      <Card sx={{ width: 400, boxShadow: 3 }}>
+        <CardContent>
+          <Typography variant="h5" mb={2} textAlign="center">
+            Login
+          </Typography>
+          <form onSubmit={handleSubmit}>
+            <TextField
+              fullWidth
+              label="Email"
+              margin="normal"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <TextField
+              fullWidth
+              type="password"
+              label="Password"
+              margin="normal"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              sx={{ mt: 2 }}
+            >
+              Login
+            </Button>
+          </form>
+          <Typography variant="body2" mt={2} textAlign="center">
+            New here? <Link to="/register">Create account</Link>
+          </Typography>
+        </CardContent>
+      </Card>
+    </Box>
+  );
 }
-
-export default Login

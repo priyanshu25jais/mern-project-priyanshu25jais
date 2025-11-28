@@ -1,150 +1,157 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from "react";
+import api from "../api";
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  MenuItem,
+  Card,
+} from "@mui/material";
 
-const Register = () => {
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    role: 'mentee',
-  })
+export default function Register() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("mentor");
+  const [mentorId, setMentorId] = useState("");
+  const [mentors, setMentors] = useState([]);
 
-  const [errors, setErrors] = useState({})
-  const [status, setStatus] = useState(null)
+  useEffect(() => {
+    const loadMentors = async () => {
+      try {
+        const { data } = await api.get("/auth/mentors");
+        setMentors(data);
+      } catch (err) {
+        console.log("LOAD MENTORS ERROR:", err.response?.data);
+      }
+    };
+    loadMentors();
+  }, []);
 
-  const validate = () => {
-    const nextErrors = {}
-
-    if (!formData.fullName.trim()) {
-      nextErrors.fullName = 'Full name is required.'
+  useEffect(() => {
+    const loadMentors = async () => {
+      try {
+        const res = await api.get("/auth/mentors");
+        setMentors(res.data);
+      } catch (err) {
+        console.error("Mentor load failed:", err.response?.data);
+      }
+    };
+    loadMentors();
+  }, []);
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+  
+    const payload = {
+      name,
+      email,
+      password,
+      role,
+      mentor: role === "mentee" ? mentorId : null
+    };
+  
+    try {
+      const res = await api.post("/auth/register", payload);
+      alert("Registration Successful!");
+      console.log("Registered:", res.data);
+  
+    } catch (err) {
+      console.error("REGISTER ERROR:", err.response?.data);
+      alert(err.response?.data?.message || "Registration failed");
     }
-
-    if (!formData.email.trim()) {
-      nextErrors.email = 'Email is required.'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      nextErrors.email = 'Enter a valid email address.'
-    }
-
-    if (!formData.password) {
-      nextErrors.password = 'Password is required.'
-    } else if (formData.password.length < 6) {
-      nextErrors.password = 'Password must be at least 6 characters.'
-    } else if (!/[A-Z]/.test(formData.password) || !/[0-9]/.test(formData.password)) {
-      nextErrors.password = 'Password needs 1 uppercase letter and 1 number.'
-    }
-
-    if (!formData.confirmPassword) {
-      nextErrors.confirmPassword = 'Confirm your password.'
-    } else if (formData.password !== formData.confirmPassword) {
-      nextErrors.confirmPassword = 'Passwords do not match.'
-    }
-
-    return nextErrors
-  }
-
-  const handleChange = (event) => {
-    const { name, value } = event.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleSubmit = (event) => {
-    event.preventDefault()
-    const validationErrors = validate()
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors)
-      setStatus(null)
-      return
-    }
-
-    setErrors({})
-    setStatus('Registration successful! (Mock submission)')
-    // TODO: Replace with API call
-  }
+  };
+  
 
   return (
-    <section className="page">
-      <h1>Register</h1>
-      <p>Create your account to start learning, mentoring, and collaborating with the community.</p>
-
-      <form className="form" onSubmit={handleSubmit} noValidate>
-        <div className="form__group">
-          <div className="form__field">
-            <label htmlFor="register-fullName">Full Name</label>
-            <input
-              id="register-fullName"
-              type="text"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              placeholder="Jane Doe"
-            />
-            {errors.fullName && <span className="form__error">{errors.fullName}</span>}
-          </div>
-
-          <div className="form__field">
-            <label htmlFor="register-email">Email</label>
-            <input
-              id="register-email"
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="you@example.com"
-            />
-            {errors.email && <span className="form__error">{errors.email}</span>}
-          </div>
-        </div>
-
-        <div className="form__group">
-          <div className="form__field">
-            <label htmlFor="register-password">Password</label>
-            <input
-              id="register-password"
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Create a password"
-            />
-            {errors.password && <span className="form__error">{errors.password}</span>}
-          </div>
-
-          <div className="form__field">
-            <label htmlFor="register-confirmPassword">Confirm Password</label>
-            <input
-              id="register-confirmPassword"
-              type="password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              placeholder="Confirm your password"
-            />
-            {errors.confirmPassword && (
-              <span className="form__error">{errors.confirmPassword}</span>
-            )}
-          </div>
-        </div>
-
-        <div className="form__field">
-          <label htmlFor="register-role">Role</label>
-          <select
-            id="register-role"
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-          >
-            <option value="mentee">Mentee</option>
-            <option value="mentor">Mentor</option>
-          </select>
-        </div>
-
-        <button type="submit" className="form__submit">
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      mt={8}
+      width="100%"
+    >
+      <Card sx={{ width: "400px", padding: "20px" }}>
+        <Typography variant="h5" fontWeight="bold" textAlign="center" mb={2}>
           Create Account
-        </button>
-        {status && <p className="form__status">{status}</p>}
-      </form>
-    </section>
-  )
-}
+        </Typography>
 
-export default Register
+        <form onSubmit={handleSubmit}>
+          <TextField
+            fullWidth
+            label="Full Name *"
+            margin="normal"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+
+          <TextField
+            fullWidth
+            label="Email *"
+            type="email"
+            margin="normal"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+
+          <TextField
+            fullWidth
+            select
+            label="Role *"
+            margin="normal"
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+          >
+            <MenuItem value="mentor">Mentor</MenuItem>
+            <MenuItem value="mentee">Mentee</MenuItem>
+          </TextField>
+
+          {role === "mentee" && (
+            <TextField
+              fullWidth
+              select
+              label="Select Mentor"
+              margin="normal"
+              value={mentorId}
+              onChange={(e) => setMentorId(e.target.value)}
+            >
+              {mentors.length > 0 ? (
+                mentors.map((m) => (
+                  <MenuItem key={m._id} value={m._id}>
+                    {m.name}
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled>No mentors available</MenuItem>
+              )}
+            </TextField>
+          )}
+
+          <TextField
+            fullWidth
+            type="password"
+            label="Password *"
+            margin="normal"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+
+          <Button
+            variant="contained"
+            fullWidth
+            type="submit"
+            sx={{ mt: 2 }}
+          >
+            REGISTER
+          </Button>
+        </form>
+
+        <Typography textAlign="center" mt={2}>
+          Already have an account?{" "}
+          <a href="/login" style={{ textDecoration: "none" }}>Login</a>
+        </Typography>
+      </Card>
+    </Box>
+  );
+}
